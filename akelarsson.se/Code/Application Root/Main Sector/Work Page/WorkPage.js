@@ -91,8 +91,6 @@ class WorkPage extends JABView {
 	
 	
 	
-	
-	
 	addImageViews () {
 		for (var i = 0; i < this.imageViews.length; i++) {
 			this.addSubview(this.imageViews[i])
