@@ -1,0 +1,130 @@
+/*
+
+@font-face {
+    font-family: siteFont;
+    src: url(./Resources/Fonts/siteFont.woff);
+    font-weight:normal;
+}
+
+@font-face {
+    font-family: siteFont;
+    src: url(./Resources/Fonts/siteFontBold.woff);
+    font-weight: bold;
+}
+
+body {
+	font-family: 'Montserrat', sans-serif;
+	background-color:#000;
+	color:#fff;
+	font-size:14px;
+	line-height:26px;
+	letter-spacing:1.5px;
+	font-style:normal;
+	font-weight:400;
+	overflow:hidden;
+	margin:0;
+}
+
+*/
+
+@font-face {
+    font-family: "siteFont";
+    src: url("./Resources/Fonts/site-font.woff") format('woff');
+}
+
+@font-face {
+    font-family: "siteFont";
+    src: url("./Resources/Fonts/site-font-bold.woff") format('woff');
+    font-weight: bold;
+}
+
+
+
+
+* {
+	font-family: 'siteFont';
+	
+	width: 1px;
+	height: 1px;
+	
+	outline-width: 0px;
+}
+
+html {
+	height:100%;
+	width:100%;
+	
+	overflow: hidden;
+	
+	background-color: white;
+}
+
+::-webkit-scrollbar { 
+    display: none; 
+}
+
+body {
+	position: relative;
+	overflow: hidden;
+	
+	
+
+	/*font-family: 'siteFont';*/
+	/*background-color:#000;*/
+	/*color:#fff;*/
+	/*font-size:14px;*/
+	/*line-height:26px;*/
+	/*letter-spacing:1.5px;*/
+	/*font-style:normal;*/
+	/*font-weight:400;*/
+
+	width: 100%;
+	height: 100%;
+
+	margin:0;
+	padding: 0;
+	
+	background-color: white;
+}
+
+
+a {
+	color: #bbbbbb;
+	text-decoration: none;
+}
+
+
+.smaller {
+	font-size:90%;
+}
+
+
+
+::-webkit-input-placeholder {
+   color: #777777;
+}
+
+:-moz-placeholder { /* Firefox 18- */
+   color: #777777;
+}
+
+::-moz-placeholder {  /* Firefox 19+ */
+   color: #777777;
+}
+
+:-ms-input-placeholder {  
+   color: #777777;
+}
+
+
+
+/* Laboratory */
+@keyframes test {
+	0% {
+		-webkit-clip-path: polygon(0px 0px, 100px 90px, 40px 60px, 0px 12px);
+	}
+	100% {
+		-webkit-clip-path: polygon(0px 0px, 100px 0px, 100px 100px, 0px 100px);
+	}
+}
+
