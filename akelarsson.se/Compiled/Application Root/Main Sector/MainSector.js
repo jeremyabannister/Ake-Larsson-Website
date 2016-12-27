@@ -13,7 +13,7 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var MainSector = function (_JABView) {
 	_inherits(MainSector, _JABView);
 
-	function MainSector(customId, imagePathStem, workImagePaths) {
+	function MainSector(customId, projectDataBundles) {
 		_classCallCheck(this, MainSector);
 
 		// State
@@ -21,11 +21,14 @@ var MainSector = function (_JABView) {
 		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(MainSector).call(this, customId));
 
 		_this.state = {
-			currentlyActive: false,
 			shouldStartLoading: false,
 			pageIndex: 0,
 
-			scrollable: false
+			scrollable: false,
+
+			selectedProject: null,
+			closingProject: false
+
 		};
 
 		// Parameters
@@ -36,8 +39,9 @@ var MainSector = function (_JABView) {
 
 		// UI
 		_this.contactPage = new ContactPage('ContactPage');
-		_this.workPage = new WorkPage('WorkPage', imagePathStem, workImagePaths);
+		_this.projectsPage = new ProjectsPage('ProjectsPage', projectDataBundles);
 		_this.homePage = new HomePage('HomePage');
+		_this.projectPage = new ProjectPage('ProjectPage', projectDataBundles);
 
 		return _this;
 	}
@@ -68,8 +72,9 @@ var MainSector = function (_JABView) {
 		value: function addAllUI() {
 
 			this.addContactPage();
-			this.addWorkPage();
+			this.addProjectsPage();
 			this.addHomePage();
+			this.addProjectPage();
 		}
 	}, {
 		key: 'addContactPage',
@@ -77,14 +82,19 @@ var MainSector = function (_JABView) {
 			this.addSubview(this.contactPage);
 		}
 	}, {
-		key: 'addWorkPage',
-		value: function addWorkPage() {
-			this.addSubview(this.workPage);
+		key: 'addProjectsPage',
+		value: function addProjectsPage() {
+			this.addSubview(this.projectsPage);
 		}
 	}, {
 		key: 'addHomePage',
 		value: function addHomePage() {
 			this.addSubview(this.homePage);
+		}
+	}, {
+		key: 'addProjectPage',
+		value: function addProjectPage() {
+			this.addSubview(this.projectPage);
 		}
 
 		// Update
@@ -97,11 +107,14 @@ var MainSector = function (_JABView) {
 			this.configureContactPage();
 			this.positionContactPage();
 
-			this.configureWorkPage();
-			this.positionWorkPage();
+			this.configureProjectsPage();
+			this.positionProjectsPage();
 
 			this.configureHomePage();
 			this.positionHomePage();
+
+			this.configureProjectPage();
+			this.positionProjectPage();
 		}
 
 		// Contact Page
@@ -132,11 +145,7 @@ var MainSector = function (_JABView) {
 					view.blur = 0;
 				}
 
-				if (this.state.currentlyActive) {
-					view.opacity = 1;
-				} else {
-					view.opacity = 0;
-				}
+				view.opacity = 1;
 			} else {
 				view.opacity = 0;
 			}
@@ -150,20 +159,16 @@ var MainSector = function (_JABView) {
 			var view = this.contactPage;
 			var newFrame = this.bounds;
 
-			if (!this.state.currentlyActive) {
-				newFrame.origin.y += 100;
-			}
-
 			view.frame = newFrame;
 		}
 
-		// Work Page
+		// Projects Page
 
 	}, {
-		key: 'configureWorkPage',
-		value: function configureWorkPage() {
+		key: 'configureProjectsPage',
+		value: function configureProjectsPage() {
 
-			var view = this.workPage;
+			var view = this.projectsPage;
 
 			view.backgroundColor = 'white';
 			view.overflowX = 'hidden';
@@ -186,19 +191,13 @@ var MainSector = function (_JABView) {
 
 				view.state.scrollable = true;
 
-				if (this.state.projectOpen) {
+				if (this.state.selectedProject != null) {
 					view.blur = 20;
 				} else {
 					view.blur = 0;
 				}
 
-				setComingSoon(view.state.comingSoon);
-
-				if (this.state.currentlyActive) {
-					view.opacity = 1;
-				} else {
-					view.opacity = 0;
-				}
+				view.opacity = 1;
 			} else {
 				view.opacity = 0;
 			}
@@ -210,15 +209,11 @@ var MainSector = function (_JABView) {
 			});
 		}
 	}, {
-		key: 'positionWorkPage',
-		value: function positionWorkPage() {
+		key: 'positionProjectsPage',
+		value: function positionProjectsPage() {
 
-			var view = this.workPage;
+			var view = this.projectsPage;
 			var newFrame = this.bounds;
-
-			if (!this.state.currentlyActive) {
-				newFrame.origin.y += 100;
-			}
 
 			view.frame = newFrame;
 		}
@@ -245,7 +240,7 @@ var MainSector = function (_JABView) {
 				}
 
 				if (!this.state.projectOpen) {
-					view.currentlyActive = this.state.currentlyActive;
+					view.currentlyActive = true;
 					view.scrollable = this.state.scrollable;
 				} else {
 					view.currentlyActive = false;
@@ -257,11 +252,7 @@ var MainSector = function (_JABView) {
 					view.blur = 0;
 				}
 
-				if (this.state.currentlyActive) {
-					view.opacity = 1;
-				} else {
-					view.opacity = 0;
-				}
+				view.opacity = 1;
 			} else {
 				view.opacity = 0;
 				view.currentlyActive = false;
@@ -276,9 +267,55 @@ var MainSector = function (_JABView) {
 			var view = this.homePage;
 			var newFrame = this.bounds;
 
-			if (!this.state.currentlyActive) {
-				newFrame.origin.y += 100;
+			view.frame = newFrame;
+		}
+
+		// Project Page
+
+	}, {
+		key: 'configureProjectPage',
+		value: function configureProjectPage() {
+
+			var view = this.projectPage;
+
+			view.clickable = true;
+			view.parameters.reservedTopBuffer = this.parameters.reservedTopBuffer;
+			view.overflowX = 'hidden';
+			view.overflowY = 'scroll';
+			view.state = {
+				shouldStartLoading: this.state.shouldStartLoading
+			};
+
+			view.configureDuration = 200;
+			view.backgroundColor = 'rgba(0,0,0, 0.3)';
+
+			if (this.state.selectedProject != null) {
+				this.bringPageToFront(view);
+				view.opacity = 1;
+				view.configureDelay = 0;
+
+				view.instantUpdate = true;
+				view.updateAllUI();
+				view.instantUpdate = false;
+			} else {
+				view.opacity = 0;
+				view.configureDelay = 200;
 			}
+
+			this.projectPage.updateAllUI();
+		}
+	}, {
+		key: 'positionProjectPage',
+		value: function positionProjectPage() {
+
+			var view = this.projectPage;
+			var newFrame = new CGRect();
+
+			newFrame.size.width = this.width;
+			newFrame.size.height = this.height;
+
+			newFrame.origin.x = (this.width - newFrame.size.width) / 2;
+			newFrame.origin.y = 0;
 
 			view.frame = newFrame;
 		}
@@ -325,35 +362,35 @@ var MainSector = function (_JABView) {
 			if (this.state.pageIndex == 0) {
 				this.homePage.spaceBarWasPressed();
 			} else if (this.state.pageIndex == 1) {
-				this.workPage.spaceBarWasPressed();
+				this.projectPage.spaceBarWasPressed();
 			}
 		}
 	}, {
 		key: 'leftArrowWasPressed',
 		value: function leftArrowWasPressed() {
 			if (this.state.pageIndex == 1) {
-				this.workPage.leftArrowWasPressed();
+				this.projectPage.leftArrowWasPressed();
 			}
 		}
 	}, {
 		key: 'upArrowWasPressed',
 		value: function upArrowWasPressed() {
 			if (this.state.pageIndex == 1) {
-				this.workPage.upArrowWasPressed();
+				this.projectPage.upArrowWasPressed();
 			}
 		}
 	}, {
 		key: 'rightArrowWasPressed',
 		value: function rightArrowWasPressed() {
 			if (this.state.pageIndex == 1) {
-				this.workPage.rightArrowWasPressed();
+				this.projectPage.rightArrowWasPressed();
 			}
 		}
 	}, {
 		key: 'downArrowWasPressed',
 		value: function downArrowWasPressed() {
 			if (this.state.pageIndex == 1) {
-				this.workPage.downArrowWasPressed();
+				this.projectPage.downArrowWasPressed();
 			}
 		}
 
@@ -365,11 +402,46 @@ var MainSector = function (_JABView) {
 
 	}, {
 		key: 'viewWasClicked',
-		value: function viewWasClicked(view) {}
+		value: function viewWasClicked(view) {
+			if (view == this.projectPage) {
+				if (view.state.handlingClick) {
+					view.state = { handlingClick: false };
+				} else {
+					this.state = {
+						selectedProject: null,
+						closingProject: true
+					};
+					this.projectPage.state = {
+						projectIndex: null,
+						imageIndex: null
+					};
+					var mainSector = this;
+					this.parent.mainSectorWantsToRelinquishFullScreen(this);
+					this.animatedUpdate(null, function () {
+						mainSector.state = {
+							closingProject: false
+						};
+						mainSector.updateAllUI();
+					});
+				}
+			}
+		}
 
-		// About Page
+		// Contact Page
 
 		// Projects Page
+
+	}, {
+		key: 'projectsPageWantsToOpenProject',
+		value: function projectsPageWantsToOpenProject(projectsPage, projectDataBundle) {
+
+			this.state = {
+				selectedProject: projectDataBundle
+			};
+			this.projectPage.loadProjectDataBundle(projectDataBundle);
+			this.parent.mainSectorWantsToUseFullScreen(this);
+			this.animatedUpdate();
+		}
 
 		// Home Page
 
@@ -398,7 +470,7 @@ var MainSector = function (_JABView) {
 	}, {
 		key: 'pages',
 		get: function get() {
-			return [this.homePage, this.workPage, this.contactPage];
+			return [this.homePage, this.projectsPage, this.contactPage, this.projectPage];
 		}
 	}, {
 		key: 'readyToClose',
@@ -409,15 +481,3 @@ var MainSector = function (_JABView) {
 
 	return MainSector;
 }(JABView);
-
-function setComingSoon(newComingSoon) {
-
-	if (newComingSoon != null) {
-		var changed = applicationRoot.mainSector.comingSoon != newComingSoon;
-		applicationRoot.mainSector.comingSoon = newComingSoon;
-
-		if (changed) {
-			applicationRoot.mainSector.updateAllUI();
-		}
-	}
-}

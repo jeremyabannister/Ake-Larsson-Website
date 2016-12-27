@@ -10,23 +10,22 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var WorkPage = function (_JABView) {
-	_inherits(WorkPage, _JABView);
+var ProjectsPage = function (_JABView) {
+	_inherits(ProjectsPage, _JABView);
 
-	function WorkPage(customId, imagePathStem, imagePaths) {
-		_classCallCheck(this, WorkPage);
+	function ProjectsPage(customId, projectDataBundles) {
+		_classCallCheck(this, ProjectsPage);
 
 		// State
 
-		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(WorkPage).call(this, customId));
+		var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(ProjectsPage).call(this, customId));
 
 		_this.state = {
 			shouldStartLoading: false,
 
-			magnified: false,
+			projectDataBundles: projectDataBundles,
 
-			imagePathStem: imagePathStem,
-			imagePaths: imagePaths
+			selectedImageViewer: null
 		};
 
 		// Parameters
@@ -37,7 +36,7 @@ var WorkPage = function (_JABView) {
 			imageAspectRatio: 2448.0 / 3264.0,
 
 			numberOfColumns: 2,
-			topBufferForGrid: 58,
+			topBufferForGrid: 15,
 			betweenBufferForGridRows: 10,
 			betweenBufferForGridColumns: 10,
 			bottomBufferForGrid: 50,
@@ -52,7 +51,7 @@ var WorkPage = function (_JABView) {
 		_this.scrollBuffer = new JABView('ScrollBuffer');
 
 		_this.imageViews = [];
-		for (var i = 0; i < imagePaths.length; i++) {
+		for (var i = 0; i < projectDataBundles.length; i++) {
 			_this.imageViews.push(new JABImageView('ImageView' + (i + 1)));
 		}
 
@@ -63,10 +62,10 @@ var WorkPage = function (_JABView) {
 	// Init
 	//
 
-	_createClass(WorkPage, [{
+	_createClass(ProjectsPage, [{
 		key: 'init',
 		value: function init() {
-			_get(Object.getPrototypeOf(WorkPage.prototype), 'init', this).call(this);
+			_get(Object.getPrototypeOf(ProjectsPage.prototype), 'init', this).call(this);
 			this.startEventListeners();
 		}
 
@@ -113,7 +112,7 @@ var WorkPage = function (_JABView) {
 	}, {
 		key: 'updateAllUI',
 		value: function updateAllUI() {
-			_get(Object.getPrototypeOf(WorkPage.prototype), 'updateAllUI', this).call(this);
+			_get(Object.getPrototypeOf(ProjectsPage.prototype), 'updateAllUI', this).call(this);
 
 			this.updateParameters();
 
@@ -162,13 +161,17 @@ var WorkPage = function (_JABView) {
 			for (var i = 0; i < this.imageViews.length; i++) {
 				var view = this.imageViews[i];
 
-				var src = this.state.imagePathStem + this.state.imagePaths[i];
-				if (view.src != src) {
-					view.src = src;
-				}
+				if (this.state.projectDataBundles.length > i) {
+					var projectDataBundle = this.state.projectDataBundles[i];
+					if (projectDataBundle.imagePaths.length > 0) {
+						view.src = projectDataBundle.imagePaths[0];
+					}
 
-				view.clickable = true;
-				view.cursor = 'pointer';
+					view.clickable = true;
+					view.cursor = 'pointer';
+
+					view.updateAllUI();
+				}
 			}
 		}
 	}, {
@@ -182,7 +185,7 @@ var WorkPage = function (_JABView) {
 				newFrame.size.height = newFrame.size.width * this.parameters.imageAspectRatio;
 
 				newFrame.origin.x = (this.width - applicationRoot.contentWidth) / 2 + i % this.parameters.numberOfColumns * (newFrame.size.width + this.parameters.betweenBufferForGridColumns);
-				newFrame.origin.y = this.parameters.reservedTopBuffer + this.parameters.topBufferForGrid + Math.floor(i / this.parameters.numberOfColumns) * (newFrame.size.height + this.parameters.betweenBufferForGridRows);
+				newFrame.origin.y = this.parameters.heightOfHeader + this.parameters.topBufferForGrid + Math.floor(i / this.parameters.numberOfColumns) * (newFrame.size.height + this.parameters.betweenBufferForGridRows);
 
 				view.frame = newFrame;
 			}
@@ -252,31 +255,13 @@ var WorkPage = function (_JABView) {
 	}, {
 		key: 'viewWasClicked',
 		value: function viewWasClicked(view) {
-			if (!this.state.magnified) {
-				this.parameters = {
-					numberOfColumns: 1
-				};
-
-				this.state = {
-					magnified: true
-				};
-			} else {
-				this.parameters = {
-					numberOfColumns: 2
-				};
-
-				this.state = {
-					magnified: false
-				};
+			for (var i = 0; i < this.imageViews.length; i++) {
+				if (this.imageViews[i] == view) {
+					if (this.state.projectDataBundles.length > i) {
+						this.parent.projectsPageWantsToOpenProject(this, this.state.projectDataBundles[i]);
+					}
+				}
 			}
-
-			this.animatedUpdate();
-
-			var workPage = this;
-			setTimeout(function () {
-				var newScrollTop = view.top - (workPage.parameters.reservedTopBuffer + workPage.parameters.topBufferForGrid);
-				workPage.scrollTo(newScrollTop, 600, 'swing');
-			}, defaultAnimationDuration);
 		}
 
 		// Image View
@@ -286,5 +271,5 @@ var WorkPage = function (_JABView) {
 		value: function imageViewDidFinishLoadingImage(imageView) {}
 	}]);
 
-	return WorkPage;
+	return ProjectsPage;
 }(JABView);

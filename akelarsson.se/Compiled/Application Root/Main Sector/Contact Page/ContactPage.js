@@ -168,6 +168,9 @@ var ContactPage = function (_JABView) {
 
 			if (sizeClass == 'xxs' || sizeClass == 'xs') {
 				this.parameters.topBufferForBioText = 70;
+				this.parameters.fractionOfAvailableContentWidthForBioText = 6.0 / 7.0;
+			} else {
+				this.parameters.fractionOfAvailableContentWidthForBioText = 5.0 / 7.0;
 			}
 		}
 
@@ -189,6 +192,10 @@ var ContactPage = function (_JABView) {
 
 			newFrame.size.width = this.width;
 			newFrame.size.height = this.height + 50;
+
+			if (sizeClass == 'xs' || sizeClass == 'xxs') {
+				newFrame.size.height = this.emailAddressLabel.bottom + 50;
+			}
 
 			newFrame.origin.x = (this.width - newFrame.size.width) / 2;
 			newFrame.origin.y = 0;
@@ -217,6 +224,14 @@ var ContactPage = function (_JABView) {
 
 			newFrame.origin.x = this.width - newFrame.size.width - (this.width - applicationRoot.contentWidth) / 2;
 			newFrame.origin.y = this.parameters.topBufferForProfilePicture;
+
+			if (sizeClass == 'xs' || sizeClass == 'xxs') {
+				newFrame.size.width = applicationRoot.contentWidth * 0.5;
+				newFrame.size.height = newFrame.size.width * this.parameters.profilePictureAspectRatio;
+
+				newFrame.origin.x = (this.width - newFrame.size.width) / 2;
+				newFrame.origin.y = this.parameters.topBufferForProfilePicture;
+			}
 
 			view.frame = newFrame;
 		}
@@ -280,6 +295,11 @@ var ContactPage = function (_JABView) {
 
 			newFrame.origin.x = (this.width - applicationRoot.contentWidth) / 2;
 			newFrame.origin.y = this.profilePicture.top;
+
+			if (sizeClass == 'xs' || sizeClass == 'xxs') {
+				newFrame.origin.x = (this.width - newFrame.size.width) / 2;
+				newFrame.origin.y = this.profilePicture.bottom + 20;
+			}
 
 			this.bioText.frame = newFrame;
 		}
@@ -365,11 +385,6 @@ var ContactPage = function (_JABView) {
 			var view = this.emailAddressLabel;
 			if (view.text == '') {
 				view.text = "mejl &nbsp;:: &nbsp;<span id='emailAddress---" + this.id + "' style='color:black; cursor: pointer'>ake34an@gmail.com</span>";
-
-				var parent = this.parent;
-				$('#emailAddress---' + this.id).click(function () {
-					parent.aboutPageWantsToOpenMailForm(this);
-				});
 			}
 
 			view.textColor = '#999999';

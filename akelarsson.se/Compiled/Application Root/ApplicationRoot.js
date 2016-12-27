@@ -29,18 +29,12 @@ var ApplicationRoot = function (_JABApplicationRoot) {
 			displayLoading: true,
 			loadingInitialData: true,
 			initialLoadingMinimumDurationHasBeenReached: false,
-			imagesLeftToLoad: 4
+			imagesLeftToLoad: 0
 		};
 
-		// Paths for required images
+		// Loading Images
 		_this.imagePathStem = './Resources/Images';
-		_this.numberOfWorkPageImages = _this.state.imagesLeftToLoad - 2;
-
-		_this.imagePaths = ['/Home Page/Cover Photo.jpg'];
-		for (var i = 0; i < _this.numberOfWorkPageImages; i++) {
-			_this.imagePaths.push('/Work Page/' + (i + 1) + '.jpg');
-		}
-		_this.imagePaths.push('/Contact Page/Profile Picture.jpg');
+		_this.assembleProjectDataBundles();
 
 		// Parameters
 		_this.parameters = {
@@ -57,11 +51,7 @@ var ApplicationRoot = function (_JABApplicationRoot) {
 			// UI
 			_this.loadingGifWrapper = new JABGifWrapper('LoadingGifWrapper');
 
-			var imagePathsCopy = _this.imagePaths.slice(0);
-			imagePathsCopy.splice(0, 1);
-			imagePathsCopy.splice(-1, 1);
-
-			_this.mainSector = new MainSector('MainSector', _this.imagePathStem, imagePathsCopy);
+			_this.mainSector = new MainSector('MainSector', _this.projectDataBundles);
 			_this.headerBackdrop = new JABView('HeaderBackdrop');
 			_this.header = new Header('Header');
 		}
@@ -79,7 +69,6 @@ var ApplicationRoot = function (_JABApplicationRoot) {
 			_get(Object.getPrototypeOf(ApplicationRoot.prototype), 'init', this).call(this);
 
 			this.downloadImages();
-			var app = this;
 		}
 
 		//
@@ -258,8 +247,10 @@ var ApplicationRoot = function (_JABApplicationRoot) {
 			view.backgroundColor = 'white';
 
 			if (this.state.headerBackdropHidden || this.state.loadingInitialData) {
+				view.configureDuration = 100;
 				view.opacity = 0;
 			} else {
+				view.configureDuration = defaultAnimationDuration;
 				view.opacity = 1;
 			}
 		}
@@ -345,7 +336,71 @@ var ApplicationRoot = function (_JABApplicationRoot) {
 		// Actions
 		//
 
-		// Navigation
+		// Data
+
+	}, {
+		key: 'assembleProjectDataBundles',
+		value: function assembleProjectDataBundles() {
+
+			this.state.imagesLeftToLoad = 2; // Start the counter at 2 because we know that besides the photos added here we need to load the cover photo and the profile picture
+			this.projectDataBundles = [];
+
+			// Front Hall Closet
+			var frontHallCloset = new ProjectDataBundle();
+			frontHallCloset.title = 'Front Hall Closet';
+			for (var i = 0; i < 6; i++) {
+				frontHallCloset.imagePaths.push(this.imagePathStem + '/Projects Page/Front Hall Closet/' + (i + 1) + '.jpg');
+				this.state.imagesLeftToLoad += 1;
+			}
+
+			// Sauna and Curved Closet
+			var saunaAndCurvedCloset = new ProjectDataBundle();
+			saunaAndCurvedCloset.title = 'Sauna and Curved Closet';
+			for (var i = 0; i < 2; i++) {
+				saunaAndCurvedCloset.imagePaths.push(this.imagePathStem + '/Projects Page/Sauna and Curved Closet/' + (i + 1) + '.jpg');
+				this.state.imagesLeftToLoad += 1;
+			}
+
+			this.projectDataBundles.push(frontHallCloset);
+			this.projectDataBundles.push(saunaAndCurvedCloset);
+		}
+
+		// Loading
+
+	}, {
+		key: 'downloadImages',
+		value: function downloadImages() {
+
+			imageBank.addToQueue(this.imagePathStem + '/Home Page/Cover Photo.jpg', this);
+			imageBank.addToQueue(this.imagePathStem + '/Contact Page/Profile Picture.jpg', this);
+
+			for (var i = 0; i < this.projectDataBundles.length; i++) {
+				if (this.projectDataBundles[i].imagePaths.length > 0) {
+					imageBank.addToQueue(this.projectDataBundles[i].imagePaths[0], this);
+				}
+			}
+
+			for (var i = 0; i < this.projectDataBundles.length; i++) {
+				for (var j = 1; j < this.projectDataBundles[i].imagePaths.length; j++) {
+					imageBank.addToQueue(this.projectDataBundles[i].imagePaths[j], this);
+				}
+			}
+		}
+	}, {
+		key: 'initialLoadingMinimumReached',
+		value: function initialLoadingMinimumReached() {
+			if (this.state.loadingInitialData) {
+				this.state = {
+					initialLoadingMinimumDurationHasBeenReached: true
+				};
+			} else {
+				this.state = {
+					initialLoadingMinimumDurationHasBeenReached: true,
+					displayLoading: false
+				};
+				this.animatedUpdate();
+			}
+		}
 
 		// Scrolling
 
@@ -400,32 +455,6 @@ var ApplicationRoot = function (_JABApplicationRoot) {
 		key: 'downArrowWasPressed',
 		value: function downArrowWasPressed() {
 			this.mainSector.downArrowWasPressed();
-		}
-
-		// Loading
-
-	}, {
-		key: 'downloadImages',
-		value: function downloadImages() {
-
-			for (var i = 0; i < this.imagePaths.length; i++) {
-				imageBank.addToQueue(this.imagePathStem + this.imagePaths[i], this);
-			}
-		}
-	}, {
-		key: 'initialLoadingMinimumReached',
-		value: function initialLoadingMinimumReached() {
-			if (this.state.loadingInitialData) {
-				this.state = {
-					initialLoadingMinimumDurationHasBeenReached: true
-				};
-			} else {
-				this.state = {
-					initialLoadingMinimumDurationHasBeenReached: true,
-					displayLoading: false
-				};
-				this.animatedUpdate();
-			}
 		}
 
 		//
@@ -488,9 +517,24 @@ var ApplicationRoot = function (_JABApplicationRoot) {
 	}, {
 		key: 'headerLogoWasClicked',
 		value: function headerLogoWasClicked() {
-			this.mainSector.state = {
-				pageIndex: 0
-			};
+			if (this.mainSector.state.selectedProject != null) {
+				this.mainSector.state = {
+					selectedProject: null
+				};
+				this.mainSectorWantsToRelinquishFullScreen(this.mainSector);
+
+				var appRoot = this;
+				this.animatedUpdate(null, function () {
+					appRoot.mainSector.state = {
+						pageIndex: 0
+					};
+					appRoot.updateAllUI(); // Use non-animated update because the only thing that should animate is the menu underline which has its own hardcoded positionDuration. If animated update is used then the newly selected page fades in but we want it to pop it
+				});
+			} else {
+				this.mainSector.state = {
+					pageIndex: 0
+				};
+			}
 
 			this.updateAllUI();
 		}
@@ -498,12 +542,25 @@ var ApplicationRoot = function (_JABApplicationRoot) {
 		key: 'headerDidSelectPage',
 		value: function headerDidSelectPage(pageIndex) {
 
-			this.mainSector.state = {
-				pageIndex: pageIndex,
-				projectOpen: false
-			};
+			if (this.mainSector.state.selectedProject != null) {
+				this.mainSector.state = {
+					selectedProject: null
+				};
+				this.mainSectorWantsToRelinquishFullScreen(this.mainSector);
 
-			this.updateAllUI(); // Use non-animated update because the only thing that should animate is the menu underline which has its own hardcoded positionDuration. If animated update is used then the newly selected page fades in but we want it to pop it
+				var appRoot = this;
+				this.animatedUpdate(null, function () {
+					appRoot.mainSector.state = {
+						pageIndex: pageIndex
+					};
+					appRoot.updateAllUI(); // Use non-animated update because the only thing that should animate is the menu underline which has its own hardcoded positionDuration. If animated update is used then the newly selected page fades in but we want it to pop it
+				});
+			} else {
+				this.mainSector.state = {
+					pageIndex: pageIndex
+				};
+				this.updateAllUI(); // Use non-animated update because the only thing that should animate is the menu underline which has its own hardcoded positionDuration. If animated update is used then the newly selected page fades in but we want it to pop it
+			}
 		}
 	}, {
 		key: 'contentWidth',
