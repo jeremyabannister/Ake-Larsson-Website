@@ -1,16 +1,19 @@
 class MainSector extends JABView {
 
-	constructor (customId, imagePathStem, workImagePaths) {
+	constructor (customId, projectDataBundles) {
 		super(customId)
 
 
 		// State
 		this.state = {
-			currentlyActive: false,
 			shouldStartLoading: false,
 			pageIndex: 0,
 			
 			scrollable: false,
+			
+			selectedProject: null,
+			closingProject: false,
+			
 		}
 		
 		
@@ -22,9 +25,9 @@ class MainSector extends JABView {
 
 		// UI
 		this.contactPage = new ContactPage('ContactPage')
-		this.workPage = new WorkPage('WorkPage', imagePathStem, workImagePaths)
+		this.projectsPage = new ProjectsPage('ProjectsPage', projectDataBundles)
 		this.homePage = new HomePage('HomePage')
-		
+		this.projectPage = new ProjectPage('ProjectPage', projectDataBundles)
 		
 	}
 
@@ -60,7 +63,7 @@ class MainSector extends JABView {
 	}
 	
 	get pages () {
-		return [this.homePage, this.workPage, this.contactPage]
+		return [this.homePage, this.projectsPage, this.contactPage, this.projectPage]
 	}
 	
 	
@@ -77,9 +80,9 @@ class MainSector extends JABView {
 	addAllUI () {
 		
 		this.addContactPage()
-		this.addWorkPage()
+		this.addProjectsPage()
 		this.addHomePage()
-		
+		this.addProjectPage()
 	}
 	
 	
@@ -90,12 +93,16 @@ class MainSector extends JABView {
 		this.addSubview(this.contactPage)
 	}
 	
-	addWorkPage () {
-		this.addSubview(this.workPage)
+	addProjectsPage () {
+		this.addSubview(this.projectsPage)
 	}
 	
 	addHomePage () {
 		this.addSubview(this.homePage)
+	}
+	
+	addProjectPage () {
+		this.addSubview(this.projectPage)
 	}
 	
 
@@ -108,13 +115,14 @@ class MainSector extends JABView {
 		this.configureContactPage()
 		this.positionContactPage()
 		
-		this.configureWorkPage()
-		this.positionWorkPage()
+		this.configureProjectsPage()
+		this.positionProjectsPage()
 		
 		this.configureHomePage()
 		this.positionHomePage()
 		
-
+		this.configureProjectPage()
+		this.positionProjectPage()
 	}
 	
 	
@@ -147,11 +155,7 @@ class MainSector extends JABView {
 				view.blur = 0
 			}
 			
-			if (this.state.currentlyActive) {
-				view.opacity = 1
-			} else {
-				view.opacity = 0
-			}
+			view.opacity = 1
 		} else {
 			view.opacity = 0
 		}
@@ -166,9 +170,6 @@ class MainSector extends JABView {
 		var view = this.contactPage
 		var newFrame = this.bounds
 		
-		if (!this.state.currentlyActive) {
-			newFrame.origin.y += 100
-		}
 		
 		view.frame = newFrame
 	}
@@ -176,10 +177,10 @@ class MainSector extends JABView {
 
 
 
-	// Work Page
-	configureWorkPage () {
+	// Projects Page
+	configureProjectsPage () {
 		
-		var view = this.workPage
+		var view = this.projectsPage
 		
 		view.backgroundColor = 'white'
 		view.overflowX = 'hidden'
@@ -202,7 +203,7 @@ class MainSector extends JABView {
 			
 			view.state.scrollable = true
 			
-			if (this.state.projectOpen) {
+			if (this.state.selectedProject != null) {
 				view.blur = 20
 			} else {
 				view.blur = 0
@@ -211,13 +212,7 @@ class MainSector extends JABView {
 			
 			
 			
-			setComingSoon(view.state.comingSoon)
-			
-			if (this.state.currentlyActive) {
-				view.opacity = 1
-			} else {
-				view.opacity = 0
-			}
+			view.opacity = 1
 		} else {
 			view.opacity = 0
 		}
@@ -233,14 +228,11 @@ class MainSector extends JABView {
 		
 	}
 	
-	positionWorkPage () {
+	positionProjectsPage () {
 		
-		var view = this.workPage
+		var view = this.projectsPage
 		var newFrame = this.bounds
 		
-		if (!this.state.currentlyActive) {
-			newFrame.origin.y += 100
-		}
 		
 		view.frame = newFrame
 		
@@ -272,7 +264,7 @@ class MainSector extends JABView {
 			}
 			
 			if (!this.state.projectOpen) {
-				view.currentlyActive = this.state.currentlyActive
+				view.currentlyActive = true
 				view.scrollable = this.state.scrollable
 			} else {
 				view.currentlyActive = false
@@ -284,11 +276,7 @@ class MainSector extends JABView {
 				view.blur = 0
 			}
 			
-			if (this.state.currentlyActive) {
-				view.opacity = 1
-			} else {
-				view.opacity = 0
-			}
+			view.opacity = 1
 		} else {
 			view.opacity = 0
 			view.currentlyActive = false
@@ -304,14 +292,62 @@ class MainSector extends JABView {
 		var view = this.homePage
 		var newFrame = this.bounds
 		
-		if (!this.state.currentlyActive) {
-			newFrame.origin.y += 100
-		}
-		
 		view.frame = newFrame
 		
 	}
 	
+	
+	
+	
+	
+	// Project Page
+	configureProjectPage () {
+		
+		var view = this.projectPage
+		
+		view.clickable = true
+		view.parameters.reservedTopBuffer = this.parameters.reservedTopBuffer
+		view.overflowX = 'hidden'
+		view.overflowY = 'scroll'
+		view.state = {
+			shouldStartLoading: this.state.shouldStartLoading,
+		}
+		
+		view.configureDuration = 200
+		view.backgroundColor = 'rgba(0,0,0, 0.3)'
+		
+		if (this.state.selectedProject != null) {
+			this.bringPageToFront(view)
+			view.opacity = 1
+			view.configureDelay = 0
+			
+			view.instantUpdate = true
+			view.updateAllUI()
+			view.instantUpdate = false
+			
+		} else {
+			view.opacity = 0
+			view.configureDelay = 200
+		}
+		
+		this.projectPage.updateAllUI()
+		
+		
+	}
+	
+	positionProjectPage () {
+		
+		var view = this.projectPage
+		var newFrame = new CGRect()
+							
+		newFrame.size.width = this.width
+		newFrame.size.height = this.height
+
+		newFrame.origin.x = (this.width - newFrame.size.width)/2
+		newFrame.origin.y = 0
+							
+		view.frame = newFrame
+	}
 	
 
 
@@ -339,7 +375,7 @@ class MainSector extends JABView {
 			this.insertSubviewAboveSubviews(page, otherPages)
 		}
 	}
-
+	
 	
 	
 	
@@ -363,32 +399,32 @@ class MainSector extends JABView {
 		if (this.state.pageIndex == 0) {
 			this.homePage.spaceBarWasPressed()
 		} else if (this.state.pageIndex == 1) {
-			this.workPage.spaceBarWasPressed()
+			this.projectPage.spaceBarWasPressed()
 		}
 	}
 	
 	
 	leftArrowWasPressed () {
 		if (this.state.pageIndex == 1) {
-			this.workPage.leftArrowWasPressed()
+			this.projectPage.leftArrowWasPressed()
 		}
 	}
 	
 	upArrowWasPressed () {
 		if (this.state.pageIndex == 1) {
-			this.workPage.upArrowWasPressed()
+			this.projectPage.upArrowWasPressed()
 		}
 	}
 	
 	rightArrowWasPressed () {
 		if (this.state.pageIndex == 1) {
-			this.workPage.rightArrowWasPressed()
+			this.projectPage.rightArrowWasPressed()
 		}
 	}
 	
 	downArrowWasPressed () {
 		if (this.state.pageIndex == 1) {
-			this.workPage.downArrowWasPressed()
+			this.projectPage.downArrowWasPressed()
 		}
 	}
 
@@ -399,14 +435,43 @@ class MainSector extends JABView {
 	
 	// JABView
 	viewWasClicked (view) {
-		
+		if (view == this.projectPage) {
+			if (view.state.handlingClick) {
+				view.state = {handlingClick: false}
+			} else {
+				this.state = {
+					selectedProject: null,
+					closingProject: true,
+				}
+				this.projectPage.state = {
+					projectIndex: null,
+					imageIndex: null,
+				}
+				var mainSector = this
+				this.parent.mainSectorWantsToRelinquishFullScreen(this)
+				this.animatedUpdate(null, function () {
+					mainSector.state = {
+						closingProject: false,
+					}
+					mainSector.updateAllUI()
+				})
+			}
+		}
 	}
 	
-	// About Page
+	// Contact Page
 	
 	
 	// Projects Page
-	
+	projectsPageWantsToOpenProject (projectsPage, projectDataBundle) {
+		
+		this.state = {
+			selectedProject: projectDataBundle,
+		}
+		this.projectPage.loadProjectDataBundle(projectDataBundle)
+		this.parent.mainSectorWantsToUseFullScreen(this)
+		this.animatedUpdate()
+	}
 	
 	
 	// Home Page
@@ -416,18 +481,4 @@ class MainSector extends JABView {
 	projectPageDidChangeProjectIndexTo(projectPage, projectIndex) {
 		this.state = {selectedProjectIndex: projectIndex}
 	}
-}
-
-
-function setComingSoon (newComingSoon) {
-	
-	if (newComingSoon != null) {
-		var changed = (applicationRoot.mainSector.comingSoon != newComingSoon)
-		applicationRoot.mainSector.comingSoon = newComingSoon
-		
-		if (changed) {
-			applicationRoot.mainSector.updateAllUI()
-		}
-	}
-	
 }

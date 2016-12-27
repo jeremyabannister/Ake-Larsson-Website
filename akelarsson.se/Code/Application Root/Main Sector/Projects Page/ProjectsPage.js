@@ -1,6 +1,6 @@
-class WorkPage extends JABView {
+class ProjectsPage extends JABView {
 
-	constructor (customId, imagePathStem, imagePaths) {
+	constructor (customId, projectDataBundles) {
 		super(customId)
 		
 		
@@ -8,10 +8,9 @@ class WorkPage extends JABView {
 		this.state = {
 			shouldStartLoading: false,
 			
-			magnified: false,
+			projectDataBundles: projectDataBundles,
 			
-			imagePathStem: imagePathStem,
-			imagePaths: imagePaths,
+			selectedImageViewer: null,
 		}
 		
 
@@ -24,7 +23,7 @@ class WorkPage extends JABView {
 			imageAspectRatio: (2448.0/3264.0),
 			
 			numberOfColumns: 2,
-			topBufferForGrid: 58,
+			topBufferForGrid: 15,
 			betweenBufferForGridRows: 10,
 			betweenBufferForGridColumns: 10,
 			bottomBufferForGrid: 50,
@@ -43,7 +42,7 @@ class WorkPage extends JABView {
 		
 		
 		this.imageViews = []
-		for (var i = 0; i < imagePaths.length; i++) {
+		for (var i = 0; i < projectDataBundles.length; i++) {
 			this.imageViews.push(new JABImageView('ImageView' + (i + 1)))
 		}
 		
@@ -155,13 +154,18 @@ class WorkPage extends JABView {
 		for (var i = 0; i < this.imageViews.length; i++) {
 			var view = this.imageViews[i]
 			
-			var src = this.state.imagePathStem + this.state.imagePaths[i]
-			if (view.src != src) {
-				view.src = src
+			if (this.state.projectDataBundles.length > i) {
+				var projectDataBundle = this.state.projectDataBundles[i]
+				if (projectDataBundle.imagePaths.length > 0) {
+					view.src = projectDataBundle.imagePaths[0]
+				}
+				
+				view.clickable = true
+				view.cursor = 'pointer'
+				
+				
+				view.updateAllUI()
 			}
-			
-			view.clickable = true
-			view.cursor = 'pointer'
 		}
 	}
 	
@@ -169,12 +173,12 @@ class WorkPage extends JABView {
 		for (var i = 0; i < this.imageViews.length; i++) {
 			var view = this.imageViews[i]
 			var newFrame = new CGRect()
-								
+			
 			newFrame.size.width = (applicationRoot.contentWidth - ((this.parameters.numberOfColumns - 1) * this.parameters.betweenBufferForGridColumns))/this.parameters.numberOfColumns
 			newFrame.size.height = newFrame.size.width * this.parameters.imageAspectRatio
 
 			newFrame.origin.x = (this.width - applicationRoot.contentWidth)/2 + (i % this.parameters.numberOfColumns) * (newFrame.size.width + this.parameters.betweenBufferForGridColumns)
-			newFrame.origin.y = this.parameters.reservedTopBuffer + this.parameters.topBufferForGrid + Math.floor(i/this.parameters.numberOfColumns) * (newFrame.size.height + this.parameters.betweenBufferForGridRows)
+			newFrame.origin.y = this.parameters.heightOfHeader + this.parameters.topBufferForGrid + Math.floor(i/this.parameters.numberOfColumns) * (newFrame.size.height + this.parameters.betweenBufferForGridRows)
 			
 			view.frame = newFrame
 		}
@@ -260,33 +264,13 @@ class WorkPage extends JABView {
 	
 	// JABView
 	viewWasClicked (view) {
-		if (!this.state.magnified) {
-			this.parameters = {
-				numberOfColumns: 1,
-			}
-			
-			this.state = {
-				magnified: true,
-			}
-		} else {
-			this.parameters = {
-				numberOfColumns: 2,
-			}
-			
-			this.state = {
-				magnified: false,
+		for (var i = 0; i < this.imageViews.length; i++) {
+			if (this.imageViews[i] == view) {
+				if (this.state.projectDataBundles.length > i) {
+					this.parent.projectsPageWantsToOpenProject(this, this.state.projectDataBundles[i])
+				}
 			}
 		}
-		
-		
-		
-		this.animatedUpdate()
-		
-		var workPage = this
-		setTimeout(function() {
-			var newScrollTop = view.top - (workPage.parameters.reservedTopBuffer + workPage.parameters.topBufferForGrid)
-			workPage.scrollTo(newScrollTop, 600, 'swing')
-		}, defaultAnimationDuration)
 	}
 	
 	

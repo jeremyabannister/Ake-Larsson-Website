@@ -14,20 +14,14 @@ class ApplicationRoot extends JABApplicationRoot {
 			displayLoading: true,
 			loadingInitialData: true,
 			initialLoadingMinimumDurationHasBeenReached: false,
-			imagesLeftToLoad: 4,
+			imagesLeftToLoad: 0,
 		}
 		
 		
-		// Paths for required images
+		// Loading Images
 		this.imagePathStem = './Resources/Images'
-		this.numberOfWorkPageImages = this.state.imagesLeftToLoad - 2
+		this.assembleProjectDataBundles()
 		
-		this.imagePaths = ['/Home Page/Cover Photo.jpg']
-		for (var i = 0; i < this.numberOfWorkPageImages; i++) {
-			this.imagePaths.push('/Work Page/' + (i + 1) + '.jpg')
-		}
-		this.imagePaths.push('/Contact Page/Profile Picture.jpg')
-	
 		
 		// Parameters
 		this.parameters = {
@@ -45,11 +39,7 @@ class ApplicationRoot extends JABApplicationRoot {
 			// UI
 			this.loadingGifWrapper = new JABGifWrapper('LoadingGifWrapper')
 			
-			var imagePathsCopy = this.imagePaths.slice(0)
-			imagePathsCopy.splice(0, 1)
-			imagePathsCopy.splice(-1, 1)
-			
-			this.mainSector = new MainSector('MainSector', this.imagePathStem, imagePathsCopy)
+			this.mainSector = new MainSector('MainSector', this.projectDataBundles)
 			this.headerBackdrop = new JABView('HeaderBackdrop')
 			this.header = new Header('Header')
 		}
@@ -64,7 +54,6 @@ class ApplicationRoot extends JABApplicationRoot {
 		super.init()
 		
 		this.downloadImages()
-		var app = this
 	}
 	
 	
@@ -270,8 +259,10 @@ class ApplicationRoot extends JABApplicationRoot {
 		view.backgroundColor = 'white'
 		
 		if (this.state.headerBackdropHidden || this.state.loadingInitialData) {
+			view.configureDuration = 100
 			view.opacity = 0
 		} else {
+			view.configureDuration = defaultAnimationDuration
 			view.opacity = 1
 		}
 		
@@ -373,7 +364,68 @@ class ApplicationRoot extends JABApplicationRoot {
 	// Actions
 	//
 	
-	// Navigation
+	// Data
+	assembleProjectDataBundles () {
+		
+		this.state.imagesLeftToLoad = 2 // Start the counter at 2 because we know that besides the photos added here we need to load the cover photo and the profile picture
+		this.projectDataBundles = []
+		
+		// Front Hall Closet
+		var frontHallCloset = new ProjectDataBundle()
+		frontHallCloset.title = 'Front Hall Closet'
+		for (var i = 0; i < 6; i++) {
+			frontHallCloset.imagePaths.push(this.imagePathStem + '/Projects Page/Front Hall Closet/' + (i + 1) + '.jpg')
+			this.state.imagesLeftToLoad += 1
+		}
+		
+		// Sauna and Curved Closet
+		var saunaAndCurvedCloset = new ProjectDataBundle()
+		saunaAndCurvedCloset.title = 'Sauna and Curved Closet'
+		for (var i = 0; i < 2; i++) {
+			saunaAndCurvedCloset.imagePaths.push(this.imagePathStem + '/Projects Page/Sauna and Curved Closet/' + (i + 1) + '.jpg')
+			this.state.imagesLeftToLoad += 1
+		}
+		
+		
+		this.projectDataBundles.push(frontHallCloset)
+		this.projectDataBundles.push(saunaAndCurvedCloset)
+		
+	}
+	
+	
+	// Loading
+	downloadImages () {
+		
+		imageBank.addToQueue(this.imagePathStem + '/Home Page/Cover Photo.jpg', this)
+		imageBank.addToQueue(this.imagePathStem + '/Contact Page/Profile Picture.jpg', this)
+		
+		for (var i = 0; i < this.projectDataBundles.length; i++) {
+			if (this.projectDataBundles[i].imagePaths.length > 0) {
+				imageBank.addToQueue(this.projectDataBundles[i].imagePaths[0], this)
+			}
+		}
+		
+		for (var i = 0; i < this.projectDataBundles.length; i++) {
+			for (var j = 1; j < this.projectDataBundles[i].imagePaths.length; j++) {
+				imageBank.addToQueue(this.projectDataBundles[i].imagePaths[j], this)
+			}
+		}
+	}
+	
+	
+	initialLoadingMinimumReached () {
+		if (this.state.loadingInitialData) {
+			this.state = {
+				initialLoadingMinimumDurationHasBeenReached: true,
+			}
+		} else {
+			this.state = {
+				initialLoadingMinimumDurationHasBeenReached: true,
+				displayLoading: false,
+			}
+			this.animatedUpdate()
+		}
+	}
 	
 
 	// Scrolling
@@ -423,32 +475,6 @@ class ApplicationRoot extends JABApplicationRoot {
 	}
 	
 	
-	
-	
-	// Loading
-	
-	downloadImages () {
-		
-		for (var i = 0; i < this.imagePaths.length; i++) {
-			imageBank.addToQueue(this.imagePathStem + this.imagePaths[i], this)
-		}
-		
-	}
-	
-	
-	initialLoadingMinimumReached () {
-		if (this.state.loadingInitialData) {
-			this.state = {
-				initialLoadingMinimumDurationHasBeenReached: true,
-			}
-		} else {
-			this.state = {
-				initialLoadingMinimumDurationHasBeenReached: true,
-				displayLoading: false,
-			}
-			this.animatedUpdate()
-		}
-	}
 	
 	
 	//
@@ -507,21 +533,52 @@ class ApplicationRoot extends JABApplicationRoot {
 
 	// Header
 	headerLogoWasClicked () {
-		this.mainSector.state = {
-			pageIndex: 0,
+		if (this.mainSector.state.selectedProject != null) {
+			this.mainSector.state = {
+				selectedProject: null,
+			}
+			this.mainSectorWantsToRelinquishFullScreen(this.mainSector)
+			
+			var appRoot = this
+			this.animatedUpdate(null, function () {
+				appRoot.mainSector.state = {
+					pageIndex: 0,
+				}
+				appRoot.updateAllUI() // Use non-animated update because the only thing that should animate is the menu underline which has its own hardcoded positionDuration. If animated update is used then the newly selected page fades in but we want it to pop it
+			})
+		} else {
+			this.mainSector.state = {
+				pageIndex: 0,
+			}
 		}
+		
 		
 		this.updateAllUI()
 	}
 
 	headerDidSelectPage (pageIndex) {
 		
-		this.mainSector.state = {
-			pageIndex: pageIndex,
-			projectOpen: false
+		if (this.mainSector.state.selectedProject != null) {
+			this.mainSector.state = {
+				selectedProject: null,
+			}
+			this.mainSectorWantsToRelinquishFullScreen(this.mainSector)
+			
+			var appRoot = this
+			this.animatedUpdate(null, function () {
+				appRoot.mainSector.state = {
+					pageIndex: pageIndex,
+				}
+				appRoot.updateAllUI() // Use non-animated update because the only thing that should animate is the menu underline which has its own hardcoded positionDuration. If animated update is used then the newly selected page fades in but we want it to pop it
+			})
+		} else {
+			this.mainSector.state = {
+				pageIndex: pageIndex,
+			}
+			this.updateAllUI() // Use non-animated update because the only thing that should animate is the menu underline which has its own hardcoded positionDuration. If animated update is used then the newly selected page fades in but we want it to pop it
 		}
 		
-		this.updateAllUI() // Use non-animated update because the only thing that should animate is the menu underline which has its own hardcoded positionDuration. If animated update is used then the newly selected page fades in but we want it to pop it
+		
 		
 	}
 
